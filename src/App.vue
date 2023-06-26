@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import TitleApp from "./components/TitleApp.vue"
 import AddTask from "./components/AddTask.vue"
-import ListTasks from "./components/ListTasks.vue"
+import TasksList from "./components/TasksList.vue"
 </script>
 
 <template>
   <TitleApp />
   <AddTask />
   <Suspense>
-    <ListTasks />
+    <TasksList />
     <template #fallback>
       Loading..
     </template>
