@@ -1,26 +1,54 @@
 <template>
-  <v-list v-if="storeTasks.tasksToComplete.length">
-    <v-list-subheader>TO COMPLETE</v-list-subheader>
+  <section v-if="storeTasks.tasksToComplete.length">
+    <v-toolbar>
+      <v-toolbar-title>TO COMPLETE</v-toolbar-title>
+    </v-toolbar>
+    <v-list>
+      <v-list-item v-for="task in storeTasks.tasksToComplete" :key="task.id">
+        <v-list-item-content>
+          <v-list-item-title>
+            {{ task.description }}
+          </v-list-item-title>
+        </v-list-item-content>
 
-    <v-list-item v-for="task in storeTasks.tasksToComplete" :key="task.id" :title="task.description">
-      <template v-slot:append>
-        <v-btn variant="text" icon="mdi mdi-checkbox-marked" size="large" @click="completeTask(task.id)">
-          <v-icon color="success"></v-icon>
-        </v-btn>
-        <v-btn variant="text" icon="mdi mdi-delete" size="large" @click="deleteTask(task.id)">
-          <v-icon color="error"></v-icon>
-        </v-btn>
-      </template>
-    </v-list-item>
-  </v-list>
+        <template v-slot:append>
+          <v-btn variant="text" icon="mdi mdi-checkbox-marked" size="large" @click="completeTask(task.id)">
+            <v-icon color="success"></v-icon>
+          </v-btn>
+          <v-btn variant="text" icon="mdi mdi-delete" size="large" @click="deleteTask(task.id)">
+            <v-icon color="error"></v-icon>
+          </v-btn>
+        </template>
+      </v-list-item>
+    </v-list>
+  </section>
 
-  <v-list v-if="storeTasks.tasksCompleted.length" :class="storeTasks.tasksToComplete.length ? 'mt-8' : ''">
-    <v-list-subheader>COMPLETED</v-list-subheader>
+  <section v-if="storeTasks.tasksCompleted.length" :class="storeTasks.tasksToComplete.length ? 'mt-8' : ''">
+    <v-toolbar>
+      <v-toolbar-title>COMPLETED</v-toolbar-title>
+      <v-btn variant="text" icon="mdi mdi-delete" @click="deleteTaskCompleted()">
+        <v-icon color="error"></v-icon>
+      </v-btn>
+    </v-toolbar>
+    <v-list>
+      <v-list-item-group>
+        <v-list-item v-for="task in storeTasks.tasksCompleted" :key="task.id">
+          <v-list-item-content>
+            <v-list-item-title class="list-item__task-completed">
+              {{ task.description }}
+            </v-list-item-title>
+          </v-list-item-content>
 
-    <v-list-item v-for="task in storeTasks.tasksCompleted" :key="task.id" :title="task.description"
-      class="task-completed">
-    </v-list-item>
-  </v-list>
+          <template v-slot:append>
+            <v-btn variant="text" icon="mdi mdi-delete" size="large" class="list-item__task-completed--reset-decoration"
+              @click="deleteTask(task.id)">
+              <v-icon color="error"></v-icon>
+            </v-btn>
+          </template>
+        </v-list-item>
+      </v-list-item-group>
+    </v-list>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -35,11 +63,14 @@ function completeTask(id: string) {
 function deleteTask(id: string) {
   storeTasks.deleteTask(id);
 }
+function deleteTaskCompleted() {
+  storeTasks.deleteTasksCompleted();
+}
 </script>
 
 <style scoped>
-.task-completed {
-  text-decoration: line-through
+.list-item__task-completed {
+  text-decoration: line-through;
 }
 
 .v-list-item {

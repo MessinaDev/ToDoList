@@ -23,6 +23,15 @@ export const useTasksStore = defineStore("tasks", {
   },
 
   actions: {
+    async fetchTasks() {
+      await db
+        .collection(nameTableTasks)
+        .get()
+        .then((tasks) => {
+          this.taskList = tasks;
+        })
+        .catch((error) => throwError(error));
+    },
     async addTask(task: Task) {
       await db
         .collection(nameTableTasks)
@@ -50,12 +59,14 @@ export const useTasksStore = defineStore("tasks", {
         })
         .catch((error) => throwError(error));
     },
-    async fetchTasks() {
+    async deleteTasksCompleted() {
       await db
         .collection(nameTableTasks)
-        .get()
-        .then((tasks) => {
-          this.taskList = tasks;
+        .doc({ completed: true })
+        .delete()
+        .then(async () => {
+          console.log("Tasks completed deleted");
+          await this.fetchTasks();
         })
         .catch((error) => throwError(error));
     }
@@ -73,12 +84,4 @@ async function fetchTask(id: string) {
   } catch (error) {
     throw new Error("Error during fetching task");
   }
-}
-
-function findTask(state: State, id: string) {
-  const task = state.taskList.find((task: Task) => task.id === id);
-  if (task) {
-    return task;
-  }
-  throw new Error(`ID not found`);
 }
