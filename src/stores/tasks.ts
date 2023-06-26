@@ -28,7 +28,6 @@ export const useTasksStore = defineStore("tasks", {
         .collection(nameTableTasks)
         .add(task, task.id)
         .then(async () => {
-          console.log("task added");
           await this.fetchTasks();
         })
         .catch((error) => throwError(error));
@@ -37,8 +36,7 @@ export const useTasksStore = defineStore("tasks", {
       const taskFound = await fetchTask(id);
       await taskFound
         .update({ completed: true })
-        .then(async (response) => {
-          console.log("response", response);
+        .then(async () => {
           await this.fetchTasks();
         })
         .catch((error) => throwError(error));
@@ -48,7 +46,6 @@ export const useTasksStore = defineStore("tasks", {
       await taskFound
         .delete()
         .then(async () => {
-          console.log("task deleted");
           await this.fetchTasks();
         })
         .catch((error) => throwError(error));
@@ -59,7 +56,6 @@ export const useTasksStore = defineStore("tasks", {
         .get()
         .then((tasks) => {
           this.taskList = tasks;
-          console.log(this.taskList);
         })
         .catch((error) => throwError(error));
     }
