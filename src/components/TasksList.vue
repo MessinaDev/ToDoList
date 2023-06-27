@@ -5,11 +5,16 @@
     </v-toolbar>
     <v-list>
       <v-list-item v-for="task in storeTasks.tasksToComplete" :key="task.id">
+        <!-- <v-text-field variant="underlined" readonly>
+          {{ task.description }}
+        </v-text-field> -->
         <v-list-item-title>
           {{ task.description }}
         </v-list-item-title>
 
         <template v-slot:append>
+          <v-btn variant="text" icon="mdi mdi-pencil" size="large">
+          </v-btn>
           <v-btn variant="text" icon="mdi mdi-checkbox-marked" size="large" @click="completeTask(task.id)">
             <v-icon color="success"></v-icon>
           </v-btn>
@@ -24,10 +29,6 @@
   <section v-if="storeTasks.tasksCompleted.length" :class="storeTasks.tasksCompleted.length ? 'mt-8' : ''">
     <v-toolbar>
       <v-toolbar-title>COMPLETED ({{ storeTasks.tasksCompleted.length }})</v-toolbar-title>
-
-      <v-btn variant="text" icon="mdi mdi-delete" @click="deleteTaskCompleted()">
-        <v-icon color="error"></v-icon>
-      </v-btn>
       <v-btn variant="text" icon="mdi mdi-chevron-down" @click="showCompletedTasks = !showCompletedTasks"></v-btn>
     </v-toolbar>
     <v-list v-if="showCompletedTasks">
@@ -51,7 +52,7 @@
 import { useTasksStore } from "../stores/tasks"
 import { ref } from "vue"
 
-const storeTasks = useTasksStore();
+const storeTasks = await useTasksStore();
 await storeTasks.fetchTasks();
 
 function completeTask(id: string) {
@@ -59,9 +60,6 @@ function completeTask(id: string) {
 }
 function deleteTask(id: string) {
   storeTasks.deleteTask(id);
-}
-function deleteTaskCompleted() {
-  storeTasks.deleteTasksCompleted();
 }
 
 let showCompletedTasks = ref(false);

@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import Task from "../entities/task";
-import Localbase from "localbase";
 
 interface State {
   taskList: Task[];
@@ -8,7 +7,7 @@ interface State {
 
 const nameDB = "ToDoApp";
 const nameTableTasks = "tasks";
-const db = new Localbase(nameDB);
+let db;
 
 export const useTasksStore = defineStore("tasks", {
   state: (): State => {
@@ -24,64 +23,80 @@ export const useTasksStore = defineStore("tasks", {
 
   actions: {
     async fetchTasks() {
-      await db
-        .collection(nameTableTasks)
-        .get()
-        .then((tasks) => {
-          this.taskList = tasks;
-        })
-        .catch((error) => throwError(error));
+      const store = await openDBStore("readonly");
+
+      const request = store.getAll();
+      request.onsuccess = (e) => {
+        this.taskList = e.target.result;
+      };
+      request.onerror = (e) => throwError(e.target.error);
     },
     async addTask(task: Task) {
-      await db
-        .collection(nameTableTasks)
-        .add(task, task.id)
-        .then(async () => {
-          await this.fetchTasks();
-        })
-        .catch((error) => throwError(error));
+      const store = await openDBStore("readwrite");
+      const request = await store.add(task);
+      request.onsuccess = async () => {
+        await this.fetchTasks();
+      };
+      request.onerror = (e) => throwError(e.target.error);
     },
     async completeTask(id: string) {
-      const taskFound = await fetchTask(id);
-      await taskFound
-        .update({ completed: true })
-        .then(async () => {
+      const store = await openDBStore("readwrite");
+      const requestTaskFound = store.get(id);
+      requestTaskFound.onsuccess = async () => {
+        const task = requestTaskFound.result;
+        console.log("task", task);
+        task.completed = true;
+        const request = await store.put(task);
+        request.onsuccess = async () => {
           await this.fetchTasks();
-        })
-        .catch((error) => throwError(error));
+        };
+        request.onerror = (e) => throwError(e.target.error);
+      };
+      requestTaskFound.onerror = () => {
+        throwError("Task not found");
+      };
     },
     async deleteTask(id: string) {
-      const taskFound = await fetchTask(id);
-      await taskFound
-        .delete()
-        .then(async () => {
-          await this.fetchTasks();
-        })
-        .catch((error) => throwError(error));
-    },
-    async deleteTasksCompleted() {
-      await db
-        .collection(nameTableTasks)
-        .doc({ completed: true })
-        .delete()
-        .then(async () => {
-          console.log("Tasks completed deleted");
-          await this.fetchTasks();
-        })
-        .catch((error) => throwError(error));
+      const store = await openDBStore("readwrite");
+      const request = await store.delete(id);
+      request.onsuccess = async () => {
+        await this.fetchTasks();
+      };
+      request.onerror = (e) => throwError(e.target.error);
     }
   }
 });
 
+async function openDB() {
+  return new Promise((resolve) => {
+    const request = indexedDB.open(nameDB);
+    request.onupgradeneeded = () => {
+      db = request.result;
+      db.createObjectStore(nameTableTasks, { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = () => {
+      db = request.result;
+      return resolve(db);
+    };
+    request.onerror = () => {
+      throwError("DB not working!");
+    };
+  });
+}
+
+async function openDBStore(typeTransaction: IDBTransactionMode) {
+  if (!db) {
+    await openDB();
+  }
+  try {
+    const trans = db.transaction([nameTableTasks], typeTransaction);
+    return await trans.objectStore(nameTableTasks);
+  } catch (error) {
+    throwError("Error openDBStore!");
+  }
+}
+
 function throwError(text: string) {
   console.error(text);
   throw new Error(text);
-}
-
-async function fetchTask(id: string) {
-  try {
-    return await db.collection(nameTableTasks).doc(id);
-  } catch (error) {
-    throw new Error("Error during fetching task");
-  }
 }
