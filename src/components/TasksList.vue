@@ -84,9 +84,12 @@ let filteredDate = ref(format(new Date(), "yyyy-MM-dd"))
 watch(filteredDate, () => {
   setDatesToFilter();
 })
-let selectedFilter = ref(allTasks);
+const keyLocalStorageSelectedFilter = "selected-filter";
+let selectedFilter = ref(localStorage.getItem(keyLocalStorageSelectedFilter) || ref(allTasks));
+setDatesToFilter();
 watch(selectedFilter, () => {
   filteredDate.value = format(new Date(), "yyyy-MM-dd");
+  localStorage.setItem(keyLocalStorageSelectedFilter, selectedFilter.value);
   setDatesToFilter();
 })
 function setDatesToFilter(): void {
