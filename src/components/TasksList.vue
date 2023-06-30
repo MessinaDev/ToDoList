@@ -5,12 +5,13 @@
     </v-toolbar>
     <v-list>
       <v-list-item v-for="task in storeTasks.tasksToComplete" :key="task.id">
-        <!-- <v-text-field variant="underlined" readonly>
-          {{ task.description }}
-        </v-text-field> -->
         <v-list-item-title>
           {{ task.description }}
         </v-list-item-title>
+        <v-list-item-subtitle class="pl-2">
+          <v-icon class="mr-1">mdi mdi-clock-time-eight-outline</v-icon> {{ task.date ? format(new Date(task.date),
+            "dd-MM-yyyy") : "-" }}
+        </v-list-item-subtitle>
 
         <template v-slot:append>
           <v-btn variant="text" icon="mdi mdi-pencil" size="large">
@@ -36,6 +37,9 @@
         <v-list-item-title class="list-item__task-completed">
           {{ task.description }}
         </v-list-item-title>
+        <v-list-item-subtitle class="pl-2 ">
+          <v-icon class="mr-1">mdi mdi-clock-time-eight-outline</v-icon> {{ format(new Date(task.date), "dd-MM-yyyy") }}
+        </v-list-item-subtitle>
 
         <template v-slot:append>
           <v-btn variant="text" icon="mdi mdi-delete" size="large" class="list-item__task-completed--reset-decoration"
@@ -51,6 +55,7 @@
 <script setup lang="ts">
 import { useTasksStore } from "../stores/tasks"
 import { ref } from "vue"
+import { format } from "date-fns"
 
 const storeTasks = await useTasksStore();
 await storeTasks.fetchTasks();
@@ -77,5 +82,11 @@ let showCompletedTasks = ref(false);
 .v-list-item--density-default.v-list-item--one-line {
   padding-top: 0px;
   padding-bottom: 0px;
+}
+
+@media (min-width: 1024px) {
+  header {
+    padding-right: 0;
+  }
 }
 </style>

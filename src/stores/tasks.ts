@@ -72,7 +72,8 @@ async function openDB() {
     const request = indexedDB.open(nameDB);
     request.onupgradeneeded = () => {
       db = request.result;
-      db.createObjectStore(nameTableTasks, { keyPath: "id", autoIncrement: true });
+      const store = db.createObjectStore(nameTableTasks, { keyPath: "id" });
+      store.createIndex("id", "id", { unique: true });
     };
     request.onsuccess = () => {
       db = request.result;

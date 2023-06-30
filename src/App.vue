@@ -15,7 +15,7 @@ import TasksList from "./components/TasksList.vue"
   </Suspense>
 </template>
 
-<style scoped>
+<style>
 .v-container {
   padding: 0;
 }
@@ -59,6 +59,12 @@ nav a:first-of-type {
 
     padding: 1rem 0;
     margin-top: 1rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .v-container {
+    max-width: initial;
   }
 }
 </style>

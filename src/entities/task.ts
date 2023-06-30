@@ -4,10 +4,12 @@ export default class Task {
   readonly id: string;
   description: string;
   completed: boolean;
+  date: string;
 
-  constructor(description: string) {
+  constructor(description: string, date: string) {
     this.id = uuidv4();
     this.description = description;
     this.completed = false;
+    this.date = date;
   }
 }
