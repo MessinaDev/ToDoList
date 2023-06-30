@@ -1,8 +1,10 @@
 import { defineStore } from "pinia";
 import Task from "../entities/task";
+import { startOfYesterday, startOfDay } from "date-fns";
 
 interface State {
   taskList: Task[];
+  datesToFilter: Date[];
 }
 
 const nameDB = "ToDoApp";
@@ -12,13 +14,29 @@ let db;
 export const useTasksStore = defineStore("tasks", {
   state: (): State => {
     return {
-      taskList: []
+      taskList: [],
+      datesToFilter: []
     };
   },
 
   getters: {
-    tasksToComplete: (state): Task[] => state.taskList.filter(({ completed }) => !completed),
-    tasksCompleted: (state): Task[] => state.taskList.filter(({ completed }) => completed)
+    tasksToComplete: (state): Task[] =>
+      sortTasks(state.taskList.filter(({ completed }) => !completed)),
+    tasksToCompleteByFilter: function (state): Task[] {
+      if (
+        state.datesToFilter.length &&
+        state.datesToFilter[0].getTime() === startOfYesterday().getTime()
+      ) {
+        return filterTasksOutdated(this.tasksToComplete);
+      } else {
+        return filterTasksByDates(this.tasksToComplete, state.datesToFilter);
+      }
+    },
+    tasksCompleted: (state): Task[] =>
+      sortTasks(state.taskList.filter(({ completed }) => completed)),
+    tasksCompletedByFilter: function (state): Task[] {
+      return filterTasksByDates(this.tasksCompleted, state.datesToFilter);
+    }
   },
 
   actions: {
@@ -44,7 +62,6 @@ export const useTasksStore = defineStore("tasks", {
       const requestTaskFound = store.get(id);
       requestTaskFound.onsuccess = async () => {
         const task = requestTaskFound.result;
-        console.log("task", task);
         task.completed = true;
         const request = await store.put(task);
         request.onsuccess = async () => {
@@ -63,9 +80,30 @@ export const useTasksStore = defineStore("tasks", {
         await this.fetchTasks();
       };
       request.onerror = (e) => throwError(e.target.error);
+    },
+    setDatesToFilter(dates: Date[]) {
+      this.datesToFilter = dates;
     }
   }
 });
+
+function sortTasks(tasks: Task[]): Task[] {
+  return tasks.sort((a, b) => {
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
+  });
+}
+function filterTasksByDates(tasksToFilter: Task[], datesToFilter: Date[]) {
+  let tasks: Task[] = tasksToFilter;
+  if (datesToFilter.length) {
+    tasks = tasks.filter((t) => {
+      return datesToFilter.map((d) => d.getTime()).includes(new Date(t.date).getTime());
+    });
+  }
+  return tasks;
+}
+function filterTasksOutdated(tasksToFilter: Task[]) {
+  return tasksToFilter.filter((t) => new Date(t.date).getTime() < startOfDay(new Date()).getTime());
+}
 
 async function openDB() {
   return new Promise((resolve) => {
