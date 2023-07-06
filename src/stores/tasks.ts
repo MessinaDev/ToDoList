@@ -1,9 +1,11 @@
 import { defineStore } from "pinia";
 import Task from "../entities/task";
-import { startOfYesterday, startOfDay } from "date-fns";
+import { startOfDay } from "date-fns";
+import { TaskFilter, allTasks, nextThreeDays, outdated, selectedDate } from "@/entities/taskFilter";
 
 interface State {
   taskList: Task[];
+  filterSelected: TaskFilter;
   datesToFilter: Date[];
 }
 
@@ -15,6 +17,7 @@ export const useTasksStore = defineStore("tasks", {
   state: (): State => {
     return {
       taskList: [],
+      filterSelected: allTasks,
       datesToFilter: []
     };
   },
@@ -23,13 +26,20 @@ export const useTasksStore = defineStore("tasks", {
     tasksToComplete: (state): Task[] =>
       sortTasks(state.taskList.filter(({ completed }) => !completed)),
     tasksToCompleteByFilter: function (state): Task[] {
-      if (
-        state.datesToFilter.length &&
-        state.datesToFilter[0].getTime() === startOfYesterday().getTime()
-      ) {
-        return filterTasksOutdated(this.tasksToComplete);
-      } else {
-        return filterTasksByDates(this.tasksToComplete, state.datesToFilter);
+      switch (state.filterSelected.description) {
+        case allTasks.description: {
+          return this.tasksToComplete;
+        }
+        case outdated.description: {
+          return filterTasksOutdated(this.tasksToComplete);
+        }
+        case selectedDate.description:
+        case nextThreeDays.description: {
+          return filterTasksByDates(this.tasksToComplete, state.datesToFilter);
+        }
+        default: {
+          return [];
+        }
       }
     },
     tasksCompleted: (state): Task[] =>
@@ -81,8 +91,10 @@ export const useTasksStore = defineStore("tasks", {
       };
       request.onerror = (e) => throwError(e.target.error);
     },
-    setDatesToFilter(dates: Date[]) {
-      this.datesToFilter = dates;
+
+    setTaskFilter(filter: TaskFilter) {
+      this.filterSelected = filter;
+      this.datesToFilter = filter.dates;
     }
   }
 });
@@ -94,15 +106,16 @@ function sortTasks(tasks: Task[]): Task[] {
 }
 function filterTasksByDates(tasksToFilter: Task[], datesToFilter: Date[]) {
   let tasks: Task[] = tasksToFilter;
-  if (datesToFilter.length) {
-    tasks = tasks.filter((t) => {
-      return datesToFilter.map((d) => d.getTime()).includes(new Date(t.date).getTime());
-    });
-  }
+  const datesToFilterConverted = datesToFilter.map((d) => d.getTime());
+  tasks = tasks.filter((t) => {
+    return datesToFilterConverted.includes(startOfDay(new Date(t.date)).getTime());
+  });
   return tasks;
 }
 function filterTasksOutdated(tasksToFilter: Task[]) {
-  return tasksToFilter.filter((t) => new Date(t.date).getTime() < startOfDay(new Date()).getTime());
+  return tasksToFilter.filter(
+    (t) => startOfDay(new Date(t.date)).getTime() < startOfDay(new Date()).getTime()
+  );
 }
 
 async function openDB() {

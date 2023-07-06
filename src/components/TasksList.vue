@@ -1,20 +1,5 @@
 <template>
-  <section class="text-center mb-5">
-    <v-container>
-      <v-row>
-        <v-col cols="auto">
-          <v-chip-group mandatory filter v-model="selectedFilter" selected-class="text-success">
-            <v-chip v-for="filter in taskFilters" :key="filter" :value="filter" size="x-large">{{ filter }}</v-chip>
-          </v-chip-group>
-        </v-col>
-
-        <v-col cols="2">
-          <v-text-field v-if="selectedFilter === selectedDate" label="dd/MM/yyyy" type="date" v-model="filteredDate">
-          </v-text-field>
-        </v-col>
-      </v-row>
-    </v-container>
-  </section>
+  <FilterTask />
 
   <section v-if="storeTasks.tasksToCompleteByFilter.length">
     <v-toolbar>
@@ -22,7 +7,7 @@
     </v-toolbar>
     <v-list>
       <v-list-item v-for="task in storeTasks.tasksToCompleteByFilter" :key="task.id">
-        <div :class="[new Date(task.date).getTime() < new Date(filteredDate).getTime() ? 'text-error' : '']">
+        <div :class="[new Date(task.date).getTime() < startOfDay(new Date()).getTime() ? 'text-error' : '']">
           <v-list-item-title>
             {{ task.description }}
           </v-list-item-title>
@@ -32,8 +17,9 @@
         </div>
 
         <template v-slot:append>
-          <!-- <v-btn variant="text" icon="mdi mdi-pencil" size="large">
-          </v-btn> -->
+          <v-btn v-if="showButtonReplaceTask" variant="text" icon="mdi mdi-pencil" size="large"
+            @click="showButtonReplaceTask = false">
+          </v-btn>
           <v-btn variant="text" icon="mdi mdi-checkbox-marked" size="large" @click="completeTask(task.id)">
             <v-icon color="success"></v-icon>
           </v-btn>
@@ -45,7 +31,7 @@
     </v-list>
   </section>
 
-  <section v-if="storeTasks.tasksCompletedByFilter.length && selectedFilter != outdated"
+  <section v-if="storeTasks.tasksCompletedByFilter.length && storeTasks.filterSelected != outdated"
     :class="storeTasks.tasksCompletedByFilter.length ? 'mt-8' : ''">
     <v-toolbar>
       <v-toolbar-title>COMPLETED ({{ storeTasks.tasksCompletedByFilter.length }})</v-toolbar-title>
@@ -72,38 +58,19 @@
 </template>
 
 <script setup lang="ts">
+import FilterTask from "./taskList/FilterTask.vue"
 import { useTasksStore } from "../stores/tasks"
-import { ref, watch } from "vue"
-import { format, addDays, startOfYesterday } from "date-fns"
-import { taskFilters, allTasks, selectedDate, nextThreeDays, outdated } from "../entities/taskFilter"
+import { ref } from "vue"
+import { format, startOfDay } from "date-fns"
+import { outdated } from "../entities/taskFilter"
 
 const storeTasks = await useTasksStore();
 await storeTasks.fetchTasks();
 
-let filteredDate = ref(format(new Date(), "yyyy-MM-dd"))
-watch(filteredDate, () => {
-  setDatesToFilter();
-})
-const keyLocalStorageSelectedFilter = "selected-filter";
-let selectedFilter = ref(localStorage.getItem(keyLocalStorageSelectedFilter) || ref(allTasks));
-setDatesToFilter();
-watch(selectedFilter, () => {
-  filteredDate.value = format(new Date(), "yyyy-MM-dd");
-  localStorage.setItem(keyLocalStorageSelectedFilter, selectedFilter.value);
-  setDatesToFilter();
-})
-function setDatesToFilter(): void {
-  let dates: Date[] = [];
-  const d = new Date(filteredDate.value);
-  if (selectedFilter.value === selectedDate) {
-    dates = [d];
-  } else if (selectedFilter.value === nextThreeDays) {
-    dates = [d, addDays(d, 1), addDays(d, 2)]
-  } else if (selectedFilter.value === outdated) {
-    dates = [startOfYesterday()];
-  }
-  storeTasks.setDatesToFilter(dates);
-}
+const showButtonReplaceTask = ref(true);
+// function initFieldsToReplaceTask(task: Task) {
+
+// }
 
 function completeTask(id: string) {
   storeTasks.completeTask(id);
@@ -116,14 +83,6 @@ let showCompletedTasks = ref(false);
 </script>
 
 <style scoped>
-.v-container {
-  padding: 0;
-}
-
-.v-col {
-  padding: 4px;
-}
-
 .list-item__task-completed {
   text-decoration: line-through;
 }
